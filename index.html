@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Healthcare Data Security</title>
+<style>
+:root {
+    --background-dark: #1e1e2e;
+    --foreground-dark: #cdd6f4;
+    --accent-dark: #b4befe;
+    --background-light: #eff1f5;
+    --foreground-light: #4c4f69;
+    --accent-light: #7287fd;
+}
+
+body {
+    font-family: cursive, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    transition: background-color 0.3s, color 0.3s;
+}
+body.dark { background-color: var(--background-dark); color: var(--foreground-dark); }
+body.light { background-color: var(--background-light); color: var(--foreground-light); }
+
+.container {
+    background-color: inherit;
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 5px 6px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 800px;
+    margin: 20px;
+}
+h1 { text-align: center; color: var(--accent-dark); }
+body.light h1 { color: var(--accent-light); }
+
+.form-group { margin-bottom: 15px; }
+label { display: block; margin-bottom: 5px; color: var(--accent-dark); }
+body.light label { color: var(--accent-light); }
+
+input, textarea, select {
+    width: calc(100% - 20px);
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 5px;
+    border: 1px solid #444;
+    background-color: #333;
+    color: #fff;
+    box-sizing: border-box;
+    font-size: 16px;
+    transition: background-color 0.3s, color 0.3s;
+}
+body.light input, body.light textarea, body.light select {
+    background-color: #fff;
+    color: #000;
+    border: 1px solid #ccc;
+}
+textarea { resize: none; height: 60px; }
+
+button {
+    width: 100%;
+    padding: 10px;
+    background-color: var(--accent-dark);
+    color: #120f0f;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-bottom: 15px;
+    transition: background-color 0.3s;
+}
+button:hover { background-color: #3ee215; }
+body.light button { background-color: var(--accent-light); }
+
+.generate-btn {
+    width: auto !important;
+    padding: 8px 16px !important;
+    font-size: 14px !important;
+    margin-bottom: 0 !important;
+    background-color: var(--accent-dark);
+    color: #120f0f;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    min-width: 80px;
+}
+.generate-btn:hover {
+    background-color: #3ee215;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+body.light .generate-btn {
+    background-color: var(--accent-light);
+    color: #fff;
+}
+body.light .generate-btn:hover {
+    background-color: #5a6fd8;
+}
+
+.form-container { display: flex; flex-wrap: wrap; gap: 15px; }
+.column { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+
+@media (max-width: 500px) {
+    .container { width: 90%; }
+    .form-container { flex-direction: column; }
+}
+</style>
+</head>
+<body class="dark">
+<div class="container">
+    <h1>Healthcare Data Security</h1>
+    <div class="form-group" style="text-align:center;">
+        <button onclick="toggleTheme()">Toggle Theme</button>
+    </div>
+    <div class="form-container">
+        <div class="column">
+            <div class="form-group">
+                <label>Patient Name:</label>
+                <input type="text" id="patientName" placeholder="Enter patient name">
+            </div>
+            <div class="form-group">
+                <label>Diagnosis:</label>
+                <textarea id="diagnosis" placeholder="Enter diagnosis details"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Medical Record:</label>
+                <textarea id="medicalRecord" placeholder="Enter medical record"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Select AES Mode:</label>
+                <select id="mode" onchange="toggleIVInput()" title="Select AES encryption mode">
+                    <option value="CBC">CBC (Cipher Block Chaining)</option>
+                    <option value="ECB">ECB (Electronic Codebook)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Key Size (bits):</label>
+                <select id="keySize" onchange="validateKeySize()" title="Select AES key size">
+                    <option value="128">128 bits (16 bytes)</option>
+                    <option value="192">192 bits (24 bytes)</option>
+                    <option value="256">256 bits (32 bytes)</option>
+                </select>
+            </div>
+            <div class="form-group" id="ivGroup">
+                <label>Initialization Vector (CBC only):</label>
+                <input type="text" id="iv" placeholder="Enter IV">
+            </div>
+        </div>
+        <div class="column">
+            <div class="form-group">
+                <label>Secret Key:</label>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <input type="text" id="key" placeholder="Enter secret key" style="flex: 1;" oninput="validateKeySize()">
+                    <button type="button" onclick="generateKey()" class="generate-btn">Generate</button>
+                </div>
+                <small id="keyValidation" style="display: block; margin-top: 5px; font-size: 12px;"></small>
+            </div>
+            <div class="form-group">
+                <label>Output Format:</label>
+                <select id="outputFormat" title="Select output encoding format">
+                    <option value="Base64">Base64</option>
+                    <option value="Hex">Hexadecimal</option>
+                </select>
+            </div>
+            <button onclick="encrypt()">Encrypt Data</button>
+            <div class="form-group">
+                <label>Encrypted Data:</label>
+                <textarea id="ciphertext" placeholder="Encrypted data"></textarea>
+            </div>
+            <button onclick="decrypt()">Decrypt Data</button>
+            <div class="form-group">
+                <label>Decrypted Data:</label>
+                <textarea id="decryptedtext" placeholder="Decrypted data" readonly></textarea>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+<script>
+function toggleTheme() {
+    document.body.classList.toggle("dark");
+    document.body.classList.toggle("light");
+}
+
+function toggleIVInput() {
+    const mode = document.getElementById("mode").value;
+    document.getElementById("ivGroup").style.display = mode === "CBC" ? "block" : "none";
+}
+
+function getRequiredKeyLength() {
+    const keySize = parseInt(document.getElementById("keySize").value);
+    return keySize / 8; // Convert bits to bytes
+}
+
+function validateKeySize() {
+    const key = document.getElementById("key").value;
+    const requiredLength = getRequiredKeyLength();
+    const keyValidation = document.getElementById("keyValidation");
+    
+    if (key.length === 0) {
+        keyValidation.textContent = `Key required: ${requiredLength} characters for ${document.getElementById("keySize").value}-bit AES`;
+        keyValidation.style.color = "#888";
+        return false;
+    } else if (key.length === requiredLength) {
+        keyValidation.textContent = `✓ Key length is correct (${key.length}/${requiredLength} characters)`;
+        keyValidation.style.color = "#4CAF50";
+        return true;
+    } else {
+        keyValidation.textContent = `✗ Key must be exactly ${requiredLength} characters (currently ${key.length})`;
+        keyValidation.style.color = "#f44336";
+        return false;
+    }
+}
+
+function generateKey() {
+    const requiredLength = getRequiredKeyLength();
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let key = '';
+    
+    // Use crypto.getRandomValues for better randomness
+    const array = new Uint8Array(requiredLength);
+    crypto.getRandomValues(array);
+    
+    for (let i = 0; i < requiredLength; i++) {
+        key += chars[array[i] % chars.length];
+    }
+    
+    document.getElementById("key").value = key;
+    validateKeySize();
+}
+
+function encrypt() {
+    // Validate key size first
+    if (!validateKeySize()) {
+        alert("Please enter a valid key with the correct length for the selected key size.");
+        return;
+    }
+
+    const mode = document.getElementById("mode").value;
+    const key = document.getElementById("key").value;
+    const iv = document.getElementById("iv").value;
+    const outputFormat = document.getElementById("outputFormat").value;
+    const plaintext = `Patient Name: ${document.getElementById("patientName").value}, Diagnosis: ${document.getElementById("diagnosis").value}, Medical Record: ${document.getElementById("medicalRecord").value}`;
+
+    // Validate IV for CBC mode
+    if (mode === "CBC" && (!iv || iv.length !== 16)) {
+        alert("CBC mode requires a 16-character Initialization Vector (IV).");
+        return;
+    }
+
+    try {
+        let cipher;
+        if (mode === "CBC") {
+            cipher = CryptoJS.AES.encrypt(plaintext, CryptoJS.enc.Utf8.parse(key), {
+                iv: CryptoJS.enc.Utf8.parse(iv),
+                mode: CryptoJS.mode.CBC,
+                padding: CryptoJS.pad.Pkcs7
+            });
+        } else {
+            cipher = CryptoJS.AES.encrypt(plaintext, CryptoJS.enc.Utf8.parse(key), {
+                mode: CryptoJS.mode.ECB,
+                padding: CryptoJS.pad.Pkcs7
+            });
+        }
+
+        const encrypted = outputFormat === "Hex" ? cipher.ciphertext.toString(CryptoJS.enc.Hex) : cipher.toString();
+        document.getElementById("ciphertext").value = encrypted;
+    } catch (error) {
+        alert("Encryption failed: " + error.message);
+        console.error("Encryption error:", error);
+    }
+}
+
+function decrypt() {
+    // Validate key size first
+    if (!validateKeySize()) {
+        alert("Please enter a valid key with the correct length for the selected key size.");
+        return;
+    }
+
+    const mode = document.getElementById("mode").value;
+    const key = document.getElementById("key").value;
+    const iv = document.getElementById("iv").value;
+    const encryptedText = document.getElementById("ciphertext").value;
+    const outputFormat = document.getElementById("outputFormat").value;
+
+    // Validate inputs
+    if (!encryptedText.trim()) {
+        alert("Please enter encrypted data to decrypt.");
+        return;
+    }
+
+    if (mode === "CBC" && (!iv || iv.length !== 16)) {
+        alert("CBC mode requires a 16-character Initialization Vector (IV).");
+        return;
+    }
+
+    try {
+        let decrypted;
+        if (mode === "CBC") {
+            decrypted = CryptoJS.AES.decrypt(
+                outputFormat === "Hex" ? CryptoJS.enc.Hex.parse(encryptedText) : encryptedText,
+                CryptoJS.enc.Utf8.parse(key),
+                {
+                    iv: CryptoJS.enc.Utf8.parse(iv),
+                    mode: CryptoJS.mode.CBC,
+                    padding: CryptoJS.pad.Pkcs7
+                }
+            );
+        } else {
+            decrypted = CryptoJS.AES.decrypt(
+                outputFormat === "Hex" ? CryptoJS.enc.Hex.parse(encryptedText) : encryptedText,
+                CryptoJS.enc.Utf8.parse(key),
+                { mode: CryptoJS.mode.ECB, padding: CryptoJS.pad.Pkcs7 }
+            );
+        }
+        
+        const decryptedText = decrypted.toString(CryptoJS.enc.Utf8);
+        if (!decryptedText) {
+            throw new Error("Decryption resulted in empty text. Check your key, IV, and encrypted data.");
+        }
+        
+        document.getElementById("decryptedtext").value = decryptedText;
+    } catch (e) {
+        alert("Decryption failed! Check key, IV, format, and encrypted data. Error: " + e.message);
+        console.error("Decryption error:", e);
+    }
+}
+
+// Initialize the form
+toggleIVInput();
+validateKeySize();
+</script>
+</body>
+</html>
